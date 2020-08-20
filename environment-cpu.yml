@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - python>=3.6
+  - python==3.7.5
   - pip
   - numpy
   - pytorch
@@ -16,3 +16,4 @@ dependencies:
     - bohrium
     - jaxlib
     - jax
+    - https://ms-release.obs.cn-north-4.myhuaweicloud.com/0.6.0-beta/MindSpore/cpu/ubuntu_x86/mindspore-0.6.0-cp37-cp37m-linux_x86_64.whl

@@ -7,12 +7,11 @@
 ==========================================================================
 """
 
-import numpy as np
-import mindspore
-import mindspore.ops.operations as P
+from mindspore.ops.operations import Sqrt, Log
+from mindspore import Tensor, float32
 
-sqrt = P.Sqrt()
-log = P.Log()
+sqrt = Sqrt()
+log = Log()
 
 
 def gsw_dHdT(sa, ct, p):
@@ -161,32 +160,32 @@ def gsw_dHdT(sa, ct, p):
     t287 = t243 * t272 / 2.0
     t292 = t247 ** 2
     t305 = 0.1e5 * p * (v44 + t2 + t3 - 2.0 * v48 * t13 * t20
-                        - 2.0 * t24 * t29 * t20 + 2.0 * t33 * t38 + 0.5 * v48 * p) * t20  \
-        - 0.1e5 * p * (v43 + t48 - 2.0 * t33 * t20 + 0.5 * t24 * p) * t38 \
-        + 0.5e4 * t123 * t20 * t134 - 0.5e4 * t143 * t35 * t134 * t37 \
-        + 0.5e4 * t143 * t20 * (p * (1.0 * v13 + 2.0 * t5 + 1.0 * t27 + t152) * t131
-                                - t130 / t156 * t105) / t133 \
-        + 0.5e4 * ((v22 + t169 + ct * (v23 + t167 + ct * (v24 + 2.0 * t165))
-                    + sa * (v27 + t179 + ct * (v28 + t177 + ct * (v29 + 2.0 * t175)) + t82 * (v32 + t189
-                                                                                              + ct * (v33 + t187 + ct * (v34 + 2.0 * t185)))) + (2.0 * t93 * t199 + 2.0 * t106 *
-                                                                                                                                                 t199 + 2.0 * t117 * t68 - 2.0 * t117 * t13 * t35 * t37 - t107
-                                                                                                                                                 * t92 - t110 * t105) * t20 - t217 * t35 * t37) * t19 + t234 * t37
-                   - t123 * t13 - t143 * t29) * t20 * t254 - 0.5e4 * t259 * \
-        t35 * t254 * t37 - 0.25e4 * t264 / t242 / t241 * t253 * t272 \
-        + 0.5e4 * t264 * t243 * (2.0 * t152 * t249 + t128 *
-                                 t243 * t245 * t248 * t272 - 2.0 * t282 /
-                                 t283 * t248 * (t25 + t26 + t28 - t287)
-                                 - 2.0 * t282 * t245 / t292 * (t25 + t26 + t28 + t287 + t152)) / t252
+                        - 2.0 * t24 * t29 * t20 + 2.0 * t33 * t38 + 0.5 * v48 * p) * t20 \
+           - 0.1e5 * p * (v43 + t48 - 2.0 * t33 * t20 + 0.5 * t24 * p) * t38 \
+           + 0.5e4 * t123 * t20 * t134 - 0.5e4 * t143 * t35 * t134 * t37 \
+           + 0.5e4 * t143 * t20 * (p * (1.0 * v13 + 2.0 * t5 + 1.0 * t27 + t152) * t131
+                                   - t130 / t156 * t105) / t133 \
+           + 0.5e4 * ((v22 + t169 + ct * (v23 + t167 + ct * (v24 + 2.0 * t165))
+                       + sa * (v27 + t179 + ct * (v28 + t177 + ct * (v29 + 2.0 * t175)) + t82 * (v32 + t189
+                                                                                                 + ct * (
+                                                                                                         v33 + t187 + ct * (
+                                                                                                         v34 + 2.0 * t185)))) + (
+                               2.0 * t93 * t199 + 2.0 * t106 *
+                               t199 + 2.0 * t117 * t68 - 2.0 * t117 * t13 * t35 * t37 - t107
+                               * t92 - t110 * t105) * t20 - t217 * t35 * t37) * t19 + t234 * t37
+                      - t123 * t13 - t143 * t29) * t20 * t254 - 0.5e4 * t259 * \
+           t35 * t254 * t37 - 0.25e4 * t264 / t242 / t241 * t253 * t272 \
+           + 0.5e4 * t264 * t243 * (2.0 * t152 * t249 + t128 *
+                                    t243 * t245 * t248 * t272 - 2.0 * t282 /
+                                    t283 * t248 * (t25 + t26 + t28 - t287)
+                                    - 2.0 * t282 * t245 / t292 * (t25 + t26 + t28 + t287 + t152)) / t252
 
     return t305
 
 
-gsw_dHdT_ms = mindspore.ms_function(fn=gsw_dHdT)
-
-
 def prepare_inputs(sa, ct, p, device):
-    return [mindspore.Tensor(a) for a in (sa, ct, p)]
+    return [Tensor(a, float32) for a in (sa, ct, p)]
 
 
 def run(sa, ct, p, device='cpu'):
-    return gsw_dHdT_ms(sa, ct, p)
+    return gsw_dHdT(sa, ct, p)

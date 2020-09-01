@@ -16,8 +16,9 @@ dependencies:
   - cudnn
   - cudatoolkit<10.2,>10.0
   - cupy
+  - matplotlib
   - pip:
     - bohrium
     - https://storage.googleapis.com/jax-releases/cuda101/jaxlib-0.1.51-cp37-none-manylinux2010_x86_64.whl
     - jax
-    - https://ms-release.obs.cn-north-4.myhuaweicloud.com/0.6.0-beta/MindSpore/gpu/ubuntu_x86/cuda-10.1/mindspore_gpu-0.6.0-cp37-cp37m-linux_x86_64.whl
+    - https://ms-release.obs.cn-north-4.myhuaweicloud.com/0.7.0-beta/MindSpore/gpu/ubuntu_x86/cuda-10.1/mindspore_gpu-0.6.0-cp37-cp37m-linux_x86_64.whl

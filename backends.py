@@ -193,8 +193,8 @@ def setup_tensorflow(device='cpu'):
 def setup_mindspore(device='cpu'):
     if device != 'gpu':
         raise RuntimeError('Mindspore requires GPU mode')
-    import mindspore
-    mindspore.context.set_context(device_target="GPU")
+    import mindspore.context as context
+    context.set_context(device_target="GPU")
     yield
 
 

@@ -35,6 +35,9 @@ def convert_to_numpy(arr, backend, device='cpu'):
     if backend == 'theano':
         return numpy.asarray(arr)
 
+    if backend == 'mindspore':
+        return arr.asnumpy()
+
     raise RuntimeError(f'Got unexpected array / backend combination: {type(arr)} / {backend}')
 
 

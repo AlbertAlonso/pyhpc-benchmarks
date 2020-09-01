@@ -30,6 +30,7 @@ BACKEND_COLORS = {
     'pytorch': 'C5',
     'tensorflow': 'C6',
     'theano': 'C7',
+    'mindspore': 'C8',
 }
 
 

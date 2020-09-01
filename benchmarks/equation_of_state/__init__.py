@@ -43,4 +43,5 @@ __implementations__ = (
     'pytorch',
     'tensorflow',
     'theano',
+    'mindspore',
 )

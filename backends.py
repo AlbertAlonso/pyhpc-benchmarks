@@ -189,6 +189,15 @@ def setup_tensorflow(device='cpu'):
     yield
 
 
+@setup_function
+def setup_mindspore(device='cpu'):
+    if device != 'gpu':
+        raise RuntimeError('Mindspore requires GPU mode')
+    import mindspore
+    mindspore.context.set_context(device_target="GPU")
+    yield
+
+
 __backends__ = {
     'numpy': setup_numpy,
     'bohrium': setup_bohrium,
@@ -197,5 +206,6 @@ __backends__ = {
     'theano': setup_theano,
     'numba': setup_numba,
     'pytorch': setup_pytorch,
-    'tensorflow': setup_tensorflow
+    'tensorflow': setup_tensorflow,
+    'mindspore': setup_mindspore,
 }

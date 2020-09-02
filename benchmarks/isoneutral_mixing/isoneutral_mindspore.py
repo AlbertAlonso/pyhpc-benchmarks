@@ -7,7 +7,7 @@ tanh = P.Tanh()
 msabs = P.Abs()
 msmin = P.Minimum()
 msmax = P.Maximum()
-
+reshape = P.Reshape()
 
 def get_drhodT(salt, temp, p):
     rho0 = 1024.0
@@ -240,28 +240,28 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
     """
     dTdz[:, :, :-1] = maskW[:, :, :-1] * \
         (temp[:, :, 1:, tau] - temp[:, :, :-1, tau]) / \
-        dzw[None, None, :-1]
+        reshape(dzw[:-1], (1, 1, *dzw[:-1].shape))
     dSdz[:, :, :-1] = maskW[:, :, :-1] * \
         (salt[:, :, 1:, tau] - salt[:, :, :-1, tau]) / \
-        dzw[None, None, :-1]
+        reshape(dzw[:-1], (1, 1, *dzw[:-1].shape))
 
     """
     gradients at eastern face of T cells
     """
     dTdx[:-1, :, :] = maskU[:-1, :, :] * (temp[1:, :, :, tau] - temp[:-1, :, :, tau]) \
-        / (dxu[:-1, None, None] * cost[None, :, None])
+        / (reshape(dxu[:-1], (*dxu[:-1].shape,1,1)) * reshape(cosu, (1, *cosu.shape, 1)))
     dSdx[:-1, :, :] = maskU[:-1, :, :] * (salt[1:, :, :, tau] - salt[:-1, :, :, tau]) \
-        / (dxu[:-1, None, None] * cost[None, :, None])
+        / (reshape(dxu[:-1], (*dxu[:-1],1,1)) * reshape(cost, (1, *cost.shape, 1)))
 
     """
     gradients at northern face of T cells
     """
     dTdy[:, :-1, :] = maskV[:, :-1, :] * \
         (temp[:, 1:, :, tau] - temp[:, :-1, :, tau]) \
-        / dyu[None, :-1, None]
+        / reshape(dyu[:-1], (1, *dyu[:-1].shape, 1))
     dSdy[:, :-1, :] = maskV[:, :-1, :] * \
         (salt[:, 1:, :, tau] - salt[:, :-1, :, tau]) \
-        / dyu[None, :-1, None]
+        / reshape(dyu[:-1], (1, *dyu[:-1].shape, 1))
 
     """
     Compute Ai_ez and K11 on center of east face of T cell.
@@ -287,11 +287,11 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
                 dSdz[1 + ip:-2 + ip, 2:-2, :su]
             sxe = -drodxe / (msmin(drodze, mindspore.Tensor([0.])) - epsln)
             taper = dm_taper(sxe)
-            sumz[:, :, ki:] += dzw[None, None, :su] * maskU[1:-2, 2:-2, ki:] \
+            sumz[:, :, ki:] += reshape(dzw[:su], (1,1,*dzw[:su])) * maskU[1:-2, 2:-2, ki:] \
                 * msmax(mindspore.Tensor([K_iso_steep]), diffloc[1:-2, 2:-2, ki:] * taper)
             Ai_ez[1:-2, 2:-2, ki:, ip, kr] = taper * \
                 sxe * maskU[1:-2, 2:-2, ki:]
-    K_11[1:-2, 2:-2, :] = sumz / (4. * dzt[None, None, :])
+    K_11[1:-2, 2:-2, :] = sumz / (4. * reshape(dzt, (1,1,*dzt.shape)))
 
     """
     Compute Ai_nz and K_22 on center of north face of T cell.
@@ -317,11 +317,11 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
                 dSdz[2:-2, 1 + jp:-2 + jp, :su]
             syn = -drodyn / (msmin(mindspore.Tensor([0.]), drodzn) - epsln)
             taper = dm_taper(syn)
-            sumz[:, :, ki:] += dzw[None, None, :su] \
+            sumz[:, :, ki:] += reshape(dzw[:su], (1,1,*dzw[:su])) \
                 * maskV[2:-2, 1:-2, ki:] * msmax(mindspore.Tensor([K_iso_steep]), diffloc[2:-2, 1:-2, ki:] * taper)
             Ai_nz[2:-2, 1:-2, ki:, jp, kr] = taper * \
                 syn * maskV[2:-2, 1:-2, ki:]
-    K_22[2:-2, 1:-2, :] = sumz / (4. * dzt[None, None, :])
+    K_22[2:-2, 1:-2, :] = sumz / (4. * reshape(dzt, (1,1,*dzt.shape)))
 
     """
     compute Ai_bx, Ai_by and K33 on top face of T cell.
@@ -347,7 +347,7 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
                 dSdx[1 + ip:-3 + ip, 2:-2, sl:su]
             sxb = -drodxb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(sxb)
-            sumx += dxu[1 + ip:-3 + ip, None, None] * \
+            sumx += reshape(dxu[1 + ip:-3 + ip], (*dxu[1 + ip:-3 + ip].shape,1,1)) * \
                 K_iso[2:-2, 2:-2, :-1] * taper * \
                 sxb**2 * maskW[2:-2, 2:-2, :-1]
             Ai_bx[2:-2, 2:-2, :-1, ip, kr] = taper * \
@@ -361,14 +361,14 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
                 dSdy[2:-2, 1 + jp:-3 + jp, sl:su]
             syb = -drodyb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(syb)
-            sumy += facty[None, :, None] * K_iso[2:-2, 2:-2, :-1] \
+            sumy += reshape(facty, (1, facty.shape, 1)) * K_iso[2:-2, 2:-2, :-1] \
                 * taper * syb**2 * maskW[2:-2, 2:-2, :-1]
             Ai_by[2:-2, 2:-2, :-1, jp, kr] = taper * \
                 syb * maskW[2:-2, 2:-2, :-1]
 
-    K_33[2:-2, 2:-2, :-1] = sumx / (4 * dxt[2:-2, None, None]) + \
-        sumy / (4 * dyt[None, 2:-2, None]
-                * cost[None, 2:-2, None])
+    K_33[2:-2, 2:-2, :-1] = sumx / (4 * reshape(dxt[2:-2], (*dxt[2:-2].shape,1,1))) + \
+        sumy / (4 * reshape(dyt[2:-2], (1, *dyt[2:-2].shape, 1))
+                * reshape(cost[2:-2], (1, *cost[2:-2].shape, 1)))
     K_33[2:-2, 2:-2, -1] = 0.
 
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by

@@ -8,7 +8,7 @@ msabs = P.Abs()
 msmin = P.Minimum()
 msmax = P.Maximum()
 
-@ms_function
+
 def get_drhodT(salt, temp, p):
     rho0 = 1024.0
     z0 = 0.0
@@ -23,14 +23,14 @@ def get_drhodT(salt, temp, p):
     return -(betaTs * thetas + betaT * (1 - gammas * grav * zz * rho0)) * rho0
 
 
-@ms_function
+
 def get_drhodS(salt, temp, p):
     betaS = 0.78e-3
     rho0 = 1024.
     return betaS * rho0 * F.ones_like(temp)
 
 
-@ms_function
+
 def dm_taper(sx):
     """
     tapering function for isopycnal slopes
@@ -40,7 +40,7 @@ def dm_taper(sx):
     return 0.5 * (1. + tanh((-msabs(sx) + iso_slopec) / iso_dslope))
 
 
-@ms_function
+
 def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, salt, temp, zt, K_iso, K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by):
     """
     Isopycnal diffusion for tracer
@@ -207,7 +207,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-@ms_function
+
 def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, salt, temp, zt, K_iso, K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by):
     """
     Isopycnal diffusion for tracer

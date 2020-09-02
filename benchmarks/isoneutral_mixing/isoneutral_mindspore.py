@@ -73,7 +73,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     """
     dTdz[:, :, :-1] = maskW[:, :, :-1] * \
         (temp[:, :, 1:, tau] - temp[:, :, :-1, tau]) / \
-        reshape(dzw[:-1], (1, 1, *dzw[:-1].shape))
+        reshape(dzw[:-1], (1, 1, len(dzw)-1))
     dSdz[:, :, :-1] = maskW[:, :, :-1] * \
         (salt[:, :, 1:, tau] - salt[:, :, :-1, tau]) / \
         reshape(dzw[:-1], (1, 1, len(dzw)-1))

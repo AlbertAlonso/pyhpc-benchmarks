@@ -63,4 +63,5 @@ __implementations__ = (
     'jax',
     'pytorch',
     'theano',
+    'mindspore',
 )

@@ -375,7 +375,7 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
 
 
 def prepare_inputs(*inputs, device):
-    return [mindspore.Tensor(a) for a in inputs]
+    return [mindspore.Tensor(a, mindspore.float32) for a in inputs]
 
 
 def run(*inputs, device='cpu'):

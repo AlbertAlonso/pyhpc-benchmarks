@@ -1,5 +1,3 @@
-import torch
-
 import mindspore
 from mindspore import ms_function
 from mindspore.ops import functional as F
@@ -7,6 +5,8 @@ from mindspore.ops import operations as P
 
 tanh = P.Tanh()
 msabs = P.Abs()
+msmin = P.Minimum()
+msmax = P.Maximum()
 
 @ms_function
 def get_drhodT(salt, temp, p):
@@ -40,7 +40,7 @@ def dm_taper(sx):
     return 0.5 * (1. + tanh((-msabs(sx) + iso_slopec) / iso_dslope))
 
 
-@torch.jit.script
+@ms_function
 def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, salt, temp, zt, K_iso, K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by):
     """
     Isopycnal diffusion for tracer
@@ -118,10 +118,10 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             drodze = drdT[1 + ip:-2 + ip, 2:-2, ki:] * dTdz[1 + ip:-2 + ip, 2:-2, :su] \
                 + drdS[1 + ip:-2 + ip, 2:-2, ki:] * \
                 dSdz[1 + ip:-2 + ip, 2:-2, :su]
-            sxe = -drodxe / (torch.min(drodze, torch.tensor([0.])) - epsln)
+            sxe = -drodxe / (msmin(drodze, mindspore.Tensor([0.])) - epsln)
             taper = dm_taper(sxe)
             sumz[:, :, ki:] += dzw[None, None, :su] * maskU[1:-2, 2:-2, ki:] \
-                * torch.max(torch.tensor([K_iso_steep]), diffloc[1:-2, 2:-2, ki:] * taper)
+                * msmax(mindspore.Tensor([K_iso_steep]), diffloc[1:-2, 2:-2, ki:] * taper)
             Ai_ez[1:-2, 2:-2, ki:, ip, kr] = taper * \
                 sxe * maskU[1:-2, 2:-2, ki:]
     K_11[1:-2, 2:-2, :] = sumz / (4. * dzt[None, None, :])
@@ -148,10 +148,10 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             drodzn = drdT[2:-2, 1 + jp:-2 + jp, ki:] * dTdz[2:-2, 1 + jp:-2 + jp, :su] \
                 + drdS[2:-2, 1 + jp:-2 + jp, ki:] * \
                 dSdz[2:-2, 1 + jp:-2 + jp, :su]
-            syn = -drodyn / (torch.min(torch.tensor([0.]), drodzn) - epsln)
+            syn = -drodyn / (msmin(mindspore.Tensor([0.]), drodzn) - epsln)
             taper = dm_taper(syn)
             sumz[:, :, ki:] += dzw[None, None, :su] \
-                * maskV[2:-2, 1:-2, ki:] * torch.max(torch.tensor([K_iso_steep]), diffloc[2:-2, 1:-2, ki:] * taper)
+                * maskV[2:-2, 1:-2, ki:] * msmax(mindspore.Tensor([K_iso_steep]), diffloc[2:-2, 1:-2, ki:] * taper)
             Ai_nz[2:-2, 1:-2, ki:, jp, kr] = taper * \
                 syn * maskV[2:-2, 1:-2, ki:]
     K_22[2:-2, 1:-2, :] = sumz / (4. * dzt[None, None, :])
@@ -178,7 +178,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             drodxb = drdT[2:-2, 2:-2, sl:su] * dTdx[1 + ip:-3 + ip, 2:-2, sl:su] \
                 + drdS[2:-2, 2:-2, sl:su] * \
                 dSdx[1 + ip:-3 + ip, 2:-2, sl:su]
-            sxb = -drodxb / (torch.min(torch.tensor([0.]), drodzb) - epsln)
+            sxb = -drodxb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(sxb)
             sumx += dxu[1 + ip:-3 + ip, None, None] * \
                 K_iso[2:-2, 2:-2, :-1] * taper * \
@@ -192,7 +192,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
             drodyb = drdT[2:-2, 2:-2, sl:su] * dTdy[2:-2, 1 + jp:-3 + jp, sl:su] \
                 + drdS[2:-2, 2:-2, sl:su] * \
                 dSdy[2:-2, 1 + jp:-3 + jp, sl:su]
-            syb = -drodyb / (torch.min(torch.tensor([0.]), drodzb) - epsln)
+            syb = -drodyb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(syb)
             sumy += facty[None, :, None] * K_iso[2:-2, 2:-2, :-1] \
                 * taper * syb**2 * maskW[2:-2, 2:-2, :-1]
@@ -207,7 +207,7 @@ def isoneutral_diffusion_pre(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt
     return K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by
 
 
-@torch.jit.script
+@ms_function
 def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu, dzt, dzw, cost, cosu, salt, temp, zt, K_iso, K_11, K_22, K_33, Ai_ez, Ai_nz, Ai_bx, Ai_by):
     """
     Isopycnal diffusion for tracer
@@ -285,10 +285,10 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
             drodze = drdT[1 + ip:-2 + ip, 2:-2, ki:] * dTdz[1 + ip:-2 + ip, 2:-2, :su] \
                 + drdS[1 + ip:-2 + ip, 2:-2, ki:] * \
                 dSdz[1 + ip:-2 + ip, 2:-2, :su]
-            sxe = -drodxe / (torch.min(drodze, torch.tensor([0.], device='cuda')) - epsln)
+            sxe = -drodxe / (msmin(drodze, mindspore.Tensor([0.])) - epsln)
             taper = dm_taper(sxe)
             sumz[:, :, ki:] += dzw[None, None, :su] * maskU[1:-2, 2:-2, ki:] \
-                * torch.max(torch.tensor([K_iso_steep], device='cuda'), diffloc[1:-2, 2:-2, ki:] * taper)
+                * msmax(mindspore.Tensor([K_iso_steep]), diffloc[1:-2, 2:-2, ki:] * taper)
             Ai_ez[1:-2, 2:-2, ki:, ip, kr] = taper * \
                 sxe * maskU[1:-2, 2:-2, ki:]
     K_11[1:-2, 2:-2, :] = sumz / (4. * dzt[None, None, :])
@@ -315,10 +315,10 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
             drodzn = drdT[2:-2, 1 + jp:-2 + jp, ki:] * dTdz[2:-2, 1 + jp:-2 + jp, :su] \
                 + drdS[2:-2, 1 + jp:-2 + jp, ki:] * \
                 dSdz[2:-2, 1 + jp:-2 + jp, :su]
-            syn = -drodyn / (torch.min(torch.tensor([0.], device='cuda'), drodzn) - epsln)
+            syn = -drodyn / (msmin(mindspore.Tensor([0.]), drodzn) - epsln)
             taper = dm_taper(syn)
             sumz[:, :, ki:] += dzw[None, None, :su] \
-                * maskV[2:-2, 1:-2, ki:] * torch.max(torch.tensor([K_iso_steep], device='cuda'), diffloc[2:-2, 1:-2, ki:] * taper)
+                * maskV[2:-2, 1:-2, ki:] * msmax(mindspore.Tensor([K_iso_steep]), diffloc[2:-2, 1:-2, ki:] * taper)
             Ai_nz[2:-2, 1:-2, ki:, jp, kr] = taper * \
                 syn * maskV[2:-2, 1:-2, ki:]
     K_22[2:-2, 1:-2, :] = sumz / (4. * dzt[None, None, :])
@@ -345,7 +345,7 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
             drodxb = drdT[2:-2, 2:-2, sl:su] * dTdx[1 + ip:-3 + ip, 2:-2, sl:su] \
                 + drdS[2:-2, 2:-2, sl:su] * \
                 dSdx[1 + ip:-3 + ip, 2:-2, sl:su]
-            sxb = -drodxb / (torch.min(torch.tensor([0.], device='cuda'), drodzb) - epsln)
+            sxb = -drodxb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(sxb)
             sumx += dxu[1 + ip:-3 + ip, None, None] * \
                 K_iso[2:-2, 2:-2, :-1] * taper * \
@@ -359,7 +359,7 @@ def isoneutral_diffusion_pre_gpu(maskT, maskU, maskV, maskW, dxt, dxu, dyt, dyu,
             drodyb = drdT[2:-2, 2:-2, sl:su] * dTdy[2:-2, 1 + jp:-3 + jp, sl:su] \
                 + drdS[2:-2, 2:-2, sl:su] * \
                 dSdy[2:-2, 1 + jp:-3 + jp, sl:su]
-            syb = -drodyb / (torch.min(torch.tensor([0.], device='cuda'), drodzb) - epsln)
+            syb = -drodyb / (msmin(mindspore.Tensor([0.]), drodzb) - epsln)
             taper = dm_taper(syb)
             sumy += facty[None, :, None] * K_iso[2:-2, 2:-2, :-1] \
                 * taper * syb**2 * maskW[2:-2, 2:-2, :-1]
